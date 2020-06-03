@@ -30,7 +30,7 @@ let users = [
 
 // posts for api/users
 server.post(`/api/users`, (req, res) => {
-    const newUser = req.body
+    const newUser = {id:shortid.generate(), ...req.body}
          if(!newUser){
               return res.status(500).json({ errorMessage: "There was an error while saving the user to the database" })
          } else if (newUser.name && newUser.bio){
@@ -69,30 +69,41 @@ server.get(`/api/users/:id`, (req, res) => {
 //handle delete request to /api/users/:id
 server.delete(`/api/users/:id`, (req, res) => {
     const urlId = req.params.id
-    let filteredUsersArray = users.filter(user =>  user.id !== Number(urlId))
-    if(!users){
-         return res.status(500).json({ errorMessage: "The user could not be removed." })
-    }else if(!filteredUsersArray){
-         return res.status(404).json({ message: "The user with the specified ID does not exist." })
-    } else {
-         return res.status(200).json(filteredUsersArray)
-    }
-})
+     deletedUsers = users.filter(deleted => deleted.id == urlId)
+     users = users.filter(user =>  user.id != urlId)
+          try{if (deletedUsers.length === 0) {
+               res.status(404).json({ message: "The user with the specified ID does not exist."
+          })} else { 
+               res.status(200).json(users)
+          }}catch(error){
+               res.status(500).json({ errorMessage: "The user could not be removed.",error: error.message
+          })}
+
+     })
+          
+
+
 
 
 //handle put request to /api/users/:id
 server.put(`/api/users/:id`, (req, res) => {
     const urlId = req.params.id
-    let singleUser = users.filter(user =>  user.id === Number(urlId))
+    let singleUser = users.filter(user =>  user.id === urlId)
     const editedUser = req.body
 
     if(!users){
-         return res.status(500).json({ errorMessage: "The user information could not be modified." })
+         res.status(500).json({ errorMessage: "The user information could not be modified." })
     } else if (!singleUser){
-         return res.status(404).json({ message: "The user with the specified ID does not exist." })
+         res.status(404).json({ message: "The user with the specified ID does not exist." })
     } else if (!editedUser.name || !editedUser.bio){
-         return res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
+         res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
     } else {
-         return res.status(200).json(editedUser)
+          singleUser={
+               id: urlId,
+               name: editedUser.name,
+               bio: editedUser.bio
+          }
+          users.push(singleUser)
+         res.status(200).json(singleUser)
     }
 })
